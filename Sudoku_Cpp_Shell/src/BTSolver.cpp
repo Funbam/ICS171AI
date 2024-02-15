@@ -95,7 +95,7 @@ pair<map<Variable*,Domain>,bool> BTSolver::forwardChecking ( void )
 	ConstraintNetwork::ConstraintRefSet constraints = network.getModifiedConstraints();
 	for(Constraint * constraint : constraints){
 		for(Variable * var : constraint->vars){
-			if(var->isAssigned){
+			if(var->isAssigned()){
 				for(Variable * neighbor : network.getNeighborsOfVariable(var)){
 					trail->push(neighbor);
 					neighbor->removeValueFromDomain(var->getAssignment())
