@@ -97,9 +97,23 @@ pair<map<Variable*,Domain>,bool> BTSolver::forwardChecking ( void )
 		for(Variable * var : constraint->vars){
 			if(var->isAssigned()){
 				for(Variable * neighbor : network.getNeighborsOfVariable(var)){
+
+					int assignedValue = var->getAssignment();
+					Domain D = neighbor->getDomain();
+                    if(D.contains(assignedValue))
+                    {
+                        if (D.size() == 1)
+                            return make_pair(newMap, false);
+                        trail->push(neighbor);
+                        neighbor->removeValueFromDomain(assignedValue);
+						newMap[neighbor] = neighbor->getDomain();
+                    }
+
+					/*
 					trail->push(neighbor);
 					neighbor->removeValueFromDomain(var->getAssignment());
 					newMap[neighbor] = neighbor->getDomain();
+					*/
 				}
 			}
 		}
