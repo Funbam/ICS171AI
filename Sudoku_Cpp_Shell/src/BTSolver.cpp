@@ -91,7 +91,20 @@ bool BTSolver::arcConsistency ( void )
  */
 pair<map<Variable*,Domain>,bool> BTSolver::forwardChecking ( void )
 {
-	return make_pair(map<Variable*, Domain>(), false);
+	map<Variable*, Domain> newMap;
+	ConstraintNetwork::ConstraintRefSet constraints = network.getModifiedConstraints();
+	for(Constraint * constraint : constraints){
+		for(Variable * var : constraint->vars){
+			if(var->isAssigned){
+				for(Variable * neighbor : network.getNeighborsOfVariable(var)){
+					trail->push(neighbor);
+					neighbor->removeValueFromDomain(var->getAssignment())
+					newMap[neighbor] = neighbor->getDomain();
+				}
+			}
+		}
+	}
+	return make_pair(newMap, arcConsistency());
 }
 
 /**
