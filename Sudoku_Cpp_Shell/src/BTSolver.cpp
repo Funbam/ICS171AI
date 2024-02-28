@@ -92,32 +92,6 @@ bool BTSolver::arcConsistency ( void )
 pair<map<Variable*,Domain>,bool> BTSolver::forwardChecking ( void )
 {
 	
-	/*
-	//With memoization
-	for (Variable * var : lastModified){
-		if(var->isAssigned()){
-				for(Variable * neighbor : network.getNeighborsOfVariable(var)){
-					int assignedValue = var->getAssignment();
-					Domain D = neighbor->getDomain();
-                    if(D.contains(assignedValue))
-                    {
-                        if (D.size() == 1)
-						{
-							lastModified.clear();
-                            return make_pair(map<Variable*, Domain>(), false);
-						}
-                        trail->push(neighbor);
-                        neighbor->removeValueFromDomain(assignedValue);
-                    }
-				}
-			}
-	}
-	
-	lastModified.clear();
-	return make_pair(map<Variable*, Domain>(), assignmentsCheck());
-	*/
-
-	
 	ConstraintNetwork::ConstraintRefSet constraints = network.getModifiedConstraints();
 	for(Constraint * constraint : constraints){
 		for(Variable * var : constraint->vars){
@@ -225,22 +199,53 @@ vector<Variable*> BTSolver::MRVwithTieBreaker ( void )
 {
 
 	vector<Variable*> list;
+	Variable * currentBest = nullptr;
 	for(Variable* variable : network.getVariables()){
 		if(!(variable->isAssigned())){
-			if(list.size() == 0){
+			if(currentBest == nullptr){
+				currentBest = variable;
 				list.push_back(variable);
 			}
-			else if (variable->getDomain().size() < list[0]->getDomain().size())
+			else if (variable->getDomain().size() < currentBest->getDomain().size())
 			{
 				list.clear();
 				list.push_back(variable);
+				currentBest = variable;
+
 			}
-			else if(variable->getDomain().size() == list[0]->getDomain().size()){
+			else if(variable->getDomain().size() == currentBest->getDomain().size()){
 				list.push_back(variable);
+				currentBest = variable;
 			}
 			
 		}
 	}
+
+	/*
+
+	vector<Variable*> finallist;
+
+	int currentBest = -1;
+	for(Variable* variable : list){
+		int numUnassignedNeighbors = 0;
+		for(Variable * neighbor : network.getNeighborsOfVariable(variable)){
+			if(!(neighbor->isAssigned())){
+				numUnassignedNeighbors++;
+			}
+		}
+
+		if(numUnassignedNeighbors > currentBest){
+			finallist.clear();
+			currentBest = numUnassignedNeighbors;
+			finallist.push_back(variable);
+		}
+		else if(numUnassignedNeighbors == currentBest){
+			currentBest = numUnassignedNeighbors;
+			finallist.push_back(variable);
+		}
+	}
+
+	*/
 
 	//At this point, list contains all variables with MRV. These now need to be tiebroken with LCV
 
