@@ -285,9 +285,43 @@ vector<int> BTSolver::getValuesInOrder ( Variable* v )
  * Return: A list of v's domain sorted by the LCV heuristic
  *         The LCV is first and the MCV is last
  */
+
+struct LCVStruct{
+	int value;
+	int LCVcount;
+
+	LCVStruct(int v, int c): value(v), LCVcount(c){}
+
+	bool operator < (const LCVStruct& str) const
+    {
+        return (LCVcount < str.LCVcount);
+    }
+
+};
+
 vector<int> BTSolver::getValuesLCVOrder ( Variable* v )
 {
-    return vector<int>();
+	vector<LCVStruct> lcvs;
+
+	for(int value : v->getDomain()){
+		int numConflicts = 0;
+		for(Variable * neighbor : network.getNeighborsOfVariable(v)){
+			if(!(neighbor->isAssigned()) && neighbor->getDomain().contains(value)){
+				++numConflicts;
+			}
+		}
+		lcvs.push_back(LCVStruct(value, numConflicts));
+	}
+	sort(lcvs.begin(), lcvs.end());
+
+
+
+	vector<int> sortedVector;
+	for(LCVStruct s : lcvs){
+		sortedVector.push_back(s.value);
+	}
+
+    return sortedVector;
 }
 
 /**
