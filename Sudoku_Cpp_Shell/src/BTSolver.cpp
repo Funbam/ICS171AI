@@ -199,31 +199,26 @@ vector<Variable*> BTSolver::MRVwithTieBreaker ( void )
 {
 
 	vector<Variable*> list;
-	Variable * currentBest = nullptr;
-	for(Variable* variable : network.getVariables()){
+	vector<Variable*> variables = network.getVariables();
+	for(Variable* variable : variables){
 		if(!(variable->isAssigned())){
-			if(currentBest == nullptr){
-				currentBest = variable;
+			if(list.empty()){
 				list.push_back(variable);
 			}
-			else if (variable->getDomain().size() < currentBest->getDomain().size())
+			else if (variable->getDomain().size() < list[0]->getDomain().size())
 			{
 				list.clear();
 				list.push_back(variable);
-				currentBest = variable;
 
 			}
-			else if(variable->getDomain().size() == currentBest->getDomain().size()){
+			else if(variable->getDomain().size() == list[0]->getDomain().size()){
 				list.push_back(variable);
-				currentBest = variable;
 			}
 			
 		}
 	}
 
-	/*
-
-	vector<Variable*> finallist;
+	vector<Variable*> final_list;
 
 	int currentBest = -1;
 	for(Variable* variable : list){
@@ -235,21 +230,25 @@ vector<Variable*> BTSolver::MRVwithTieBreaker ( void )
 		}
 
 		if(numUnassignedNeighbors > currentBest){
-			finallist.clear();
+			final_list.clear();
 			currentBest = numUnassignedNeighbors;
-			finallist.push_back(variable);
+			final_list.push_back(variable);
 		}
 		else if(numUnassignedNeighbors == currentBest){
 			currentBest = numUnassignedNeighbors;
-			finallist.push_back(variable);
+			final_list.push_back(variable);
 		}
 	}
 
-	*/
+	if (final_list.empty())
+	{
+		Variable* tmp = nullptr;
+		final_list.push_back(tmp);
+	}
 
 	//At this point, list contains all variables with MRV. These now need to be tiebroken with LCV
 
-    return list;
+    return final_list;
 
 }
 
