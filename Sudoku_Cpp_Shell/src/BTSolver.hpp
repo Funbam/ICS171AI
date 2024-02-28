@@ -53,6 +53,7 @@ private:
 	ConstraintNetwork network;
 	SudokuBoard sudokuGrid;
 	Trail* trail;
+	//std::vector<Variable*> lastModified;
 
 	bool hasSolution = false;
 

@@ -91,34 +91,53 @@ bool BTSolver::arcConsistency ( void )
  */
 pair<map<Variable*,Domain>,bool> BTSolver::forwardChecking ( void )
 {
-	map<Variable*, Domain> newMap;
-	ConstraintNetwork::ConstraintRefSet constraints = network.getModifiedConstraints();
-	for(Constraint * constraint : constraints){
-		for(Variable * var : constraint->vars){
-			if(var->isAssigned()){
+	
+	/*
+	//With memoization
+	for (Variable * var : lastModified){
+		if(var->isAssigned()){
 				for(Variable * neighbor : network.getNeighborsOfVariable(var)){
-
 					int assignedValue = var->getAssignment();
 					Domain D = neighbor->getDomain();
                     if(D.contains(assignedValue))
                     {
                         if (D.size() == 1)
-                            return make_pair(newMap, false);
+						{
+							lastModified.clear();
+                            return make_pair(map<Variable*, Domain>(), false);
+						}
                         trail->push(neighbor);
                         neighbor->removeValueFromDomain(assignedValue);
-						newMap[neighbor] = neighbor->getDomain();
                     }
+				}
+			}
+	}
+	
+	lastModified.clear();
+	return make_pair(map<Variable*, Domain>(), assignmentsCheck());
+	*/
 
-					/*
-					trail->push(neighbor);
-					neighbor->removeValueFromDomain(var->getAssignment());
-					newMap[neighbor] = neighbor->getDomain();
-					*/
+	
+	ConstraintNetwork::ConstraintRefSet constraints = network.getModifiedConstraints();
+	for(Constraint * constraint : constraints){
+		for(Variable * var : constraint->vars){
+			if(var->isAssigned()){
+				for(Variable * neighbor : network.getNeighborsOfVariable(var)){
+					int assignedValue = var->getAssignment();
+					Domain D = neighbor->getDomain();
+                    if(D.contains(assignedValue))
+                    {
+                        if (D.size() == 1)
+                            return make_pair(map<Variable*, Domain>(), false);
+                        trail->push(neighbor);
+                        neighbor->removeValueFromDomain(assignedValue);
+                    }
 				}
 			}
 		}
 	}
-	return make_pair(newMap, arcConsistency());
+	return make_pair(map<Variable*, Domain>(), assignmentsCheck());
+	
 }
 
 /**
@@ -176,7 +195,21 @@ Variable* BTSolver::getfirstUnassignedVariable ( void )
  */
 Variable* BTSolver::getMRV ( void )
 {
-    return nullptr;
+	vector<Variable*> list = network.getVariables();
+	Variable* var = nullptr;
+	for(Variable* variable : list){
+		if(!(variable->isAssigned())){
+			if(var == nullptr){
+				var = variable;
+			}
+			else if (variable->getDomain().size() < var->getDomain().size())
+			{
+				var = variable;
+			}
+			
+		}
+	}
+    return var;
 }
 
 /**
@@ -190,7 +223,29 @@ Variable* BTSolver::getMRV ( void )
  */
 vector<Variable*> BTSolver::MRVwithTieBreaker ( void )
 {
-    return vector<Variable*>();
+
+	vector<Variable*> list;
+	for(Variable* variable : network.getVariables()){
+		if(!(variable->isAssigned())){
+			if(list.size() == 0){
+				list.push_back(variable);
+			}
+			else if (variable->getDomain().size() < list[0]->getDomain().size())
+			{
+				list.clear();
+				list.push_back(variable);
+			}
+			else if(variable->getDomain().size() == list[0]->getDomain().size()){
+				list.push_back(variable);
+			}
+			
+		}
+	}
+
+	//At this point, list contains all variables with MRV. These now need to be tiebroken with LCV
+
+    return list;
+
 }
 
 /**
@@ -280,9 +335,9 @@ int BTSolver::solve ( float time_left)
 		// Store place in trail and push variable's state on trail
 		trail->placeTrailMarker();
 		trail->push( v );
-
 		// Assign the value
 		v->assignValue( i );
+		//lastModified.push_back(v);
 
 		// Propagate constraints, check consistency, recurse
 		if ( checkConsistency() ) {
@@ -316,7 +371,6 @@ bool BTSolver::checkConsistency ( void )
 
 	if ( cChecks == "tournCC" )
 		return getTournCC();
-
 	return assignmentsCheck();
 }
 
