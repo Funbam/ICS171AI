@@ -93,24 +93,30 @@ pair<map<Variable*,Domain>,bool> BTSolver::forwardChecking ( void )
 {
 	
 	ConstraintNetwork::ConstraintRefSet constraints = network.getModifiedConstraints();
-	for(Constraint * constraint : constraints){
-		for(Variable * var : constraint->vars){
-			if(var->isAssigned()){
-				for(Variable * neighbor : network.getNeighborsOfVariable(var)){
-					int assignedValue = var->getAssignment();
-					Domain D = neighbor->getDomain();
+    for(Constraint * constraint : constraints){
+        for(Variable * var : constraint->vars){
+            if(var->isAssigned()){
+                for(Variable * neighbor : network.getNeighborsOfVariable(var)){
+                    int assignedValue = var->getAssignment();
+                    Domain D = neighbor->getDomain();
                     if(D.contains(assignedValue))
                     {
                         if (D.size() == 1)
                             return make_pair(map<Variable*, Domain>(), false);
                         trail->push(neighbor);
                         neighbor->removeValueFromDomain(assignedValue);
+                        Domain D2 = neighbor->getDomain();
+                        if(D2.size() == 1){
+                            int value = D2.getValues()[0];
+                            trail->push(neighbor);
+                            neighbor->assignValue(value);
+                        }
                     }
-				}
-			}
-		}
-	}
-	return make_pair(map<Variable*, Domain>(), assignmentsCheck());
+                }
+            }
+        }
+    }
+    return make_pair(map<Variable*, Domain>(), assignmentsCheck());
 	
 }
 
@@ -136,33 +142,7 @@ pair<map<Variable*,int>,bool> BTSolver::norvigCheck ( void )
  
 	if (!forwardChecking().second) return make_pair(map<Variable*, int>(), false);
 
-	// if (!assignmentsCheck())
-	// 	return make_pair(map<Variable*, int>(), false);
-
 	ConstraintNetwork::ConstraintRefSet all_constraints = network.getModifiedConstraints();
-    // ConstraintNetwork::ConstraintSet all_constraints = network.getConstraints();
-    // for(Constraint constraint : all_constraints){
-    //     for (int i = 1; i <= sudokuGrid.get_n(); i++){
-    //         int pos_count = 0;
-    //         Variable * singleSlot = nullptr;
-    //         for(Variable * var : constraint.vars){
-    //             if(var->getDomain().contains(i)){
-    //                 pos_count++;
-	// 				if (pos_count > 1) 
-	// 					break;
-    //                 singleSlot = var;
-    //             }
-
-    //         }
-    //         if (pos_count == 1){
-    //             trail->push(singleSlot);
-    //             singleSlot->assignValue(i);
-    //         }
-    //         if(pos_count == 0){
-    //             return make_pair(map<Variable*, int>(), false);
-    //         }
-    //     }
-    // }
 
 	for(Constraint* constraint : all_constraints)
 	{
@@ -186,16 +166,17 @@ pair<map<Variable*,int>,bool> BTSolver::norvigCheck ( void )
 					{
 						trail->push(var);
 						var->assignValue(i + 1);
-						// for (Constraint* c : network.getModifiedConstraints())
-						// {	
-						// 	if (!(c->isConsistent()))
-						// 		return make_pair(map<Variable*, int>(), false);
-						// }
 					}
 
 				}
 
 			}
+			
+			if (counter[i] == 0)
+			{
+				break;
+			}
+
 		}
 
 	}
