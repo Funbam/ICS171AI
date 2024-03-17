@@ -112,7 +112,9 @@ int main ( int argc, char *argv[] )
 
 			SudokuBoard board( individualFile );
 
-			BTSolver solver = BTSolver( board, &trail, val_sh, var_sh, cc );
+			Trail temptrail;
+
+			BTSolver solver = BTSolver( board, &temptrail, val_sh, var_sh, cc );
 			if (cc == "forwardChecking" or cc == "norvigCheck" or cc == "tournCC")
 	            solver.checkConsistency();
 			solver.solve(600.0);
@@ -120,7 +122,10 @@ int main ( int argc, char *argv[] )
 			if ( solver.haveSolution() )
 				numSolutions++;
 
-			trail.clear();
+			cout << "Trail Pushes: " << temptrail.getPushCount() << endl;
+			cout << "Backtracks: "  << temptrail.getUndoCount() << endl;
+
+			temptrail.clear();
 		}
 
 		cout << "Solutions Found: " << numSolutions << endl;

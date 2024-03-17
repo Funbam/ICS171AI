@@ -133,7 +133,31 @@ pair<map<Variable*,Domain>,bool> BTSolver::forwardChecking ( void )
  */
 pair<map<Variable*,int>,bool> BTSolver::norvigCheck ( void )
 {
-    return make_pair(map<Variable*, int>(), false);
+    ConstraintNetwork::ConstraintRefSet constraints = network.getModifiedConstraints();
+	for(Constraint * constraint : constraints){
+		for(Variable * var : constraint->vars){
+			if(var->isAssigned()){
+				for(Variable * neighbor : network.getNeighborsOfVariable(var)){
+					int assignedValue = var->getAssignment();
+					Domain D = neighbor->getDomain();
+                    if(D.contains(assignedValue))
+                    {
+                        if (D.size() == 1)
+                            return make_pair(map<Variable*, int>(), false);
+                        trail->push(neighbor);
+                        neighbor->removeValueFromDomain(assignedValue);
+						Domain D2 = neighbor->getDomain();
+						if (D2.size() == 1){
+							int value = D2.getValues()[0];
+							trail->push(neighbor);
+							neighbor->assignValue(value);
+						}
+                    }
+				}
+			}
+		}
+	}
+	return make_pair(map<Variable*, int>(), assignmentsCheck());
 }
 
 /**
@@ -197,7 +221,6 @@ Variable* BTSolver::getMRV ( void )
  */
 vector<Variable*> BTSolver::MRVwithTieBreaker ( void )
 {
-
 	vector<Variable*> list;
 	vector<Variable*> variables = network.getVariables();
 	for(Variable* variable : variables){
