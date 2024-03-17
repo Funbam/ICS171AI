@@ -133,30 +133,73 @@ pair<map<Variable*,Domain>,bool> BTSolver::forwardChecking ( void )
  */
 pair<map<Variable*,int>,bool> BTSolver::norvigCheck ( void )
 {
-    ConstraintNetwork::ConstraintRefSet constraints = network.getModifiedConstraints();
-	for(Constraint * constraint : constraints){
-		for(Variable * var : constraint->vars){
-			if(var->isAssigned()){
-				for(Variable * neighbor : network.getNeighborsOfVariable(var)){
-					int assignedValue = var->getAssignment();
-					Domain D = neighbor->getDomain();
-                    if(D.contains(assignedValue))
-                    {
-                        if (D.size() == 1)
-                            return make_pair(map<Variable*, int>(), false);
-                        trail->push(neighbor);
-                        neighbor->removeValueFromDomain(assignedValue);
-						Domain D2 = neighbor->getDomain();
-						if (D2.size() == 1){
-							int value = D2.getValues()[0];
-							trail->push(neighbor);
-							neighbor->assignValue(value);
-						}
-                    }
+ 
+	if (!forwardChecking().second) return make_pair(map<Variable*, int>(), false);
+
+	// if (!assignmentsCheck())
+	// 	return make_pair(map<Variable*, int>(), false);
+
+	ConstraintNetwork::ConstraintRefSet all_constraints = network.getModifiedConstraints();
+    // ConstraintNetwork::ConstraintSet all_constraints = network.getConstraints();
+    // for(Constraint constraint : all_constraints){
+    //     for (int i = 1; i <= sudokuGrid.get_n(); i++){
+    //         int pos_count = 0;
+    //         Variable * singleSlot = nullptr;
+    //         for(Variable * var : constraint.vars){
+    //             if(var->getDomain().contains(i)){
+    //                 pos_count++;
+	// 				if (pos_count > 1) 
+	// 					break;
+    //                 singleSlot = var;
+    //             }
+
+    //         }
+    //         if (pos_count == 1){
+    //             trail->push(singleSlot);
+    //             singleSlot->assignValue(i);
+    //         }
+    //         if(pos_count == 0){
+    //             return make_pair(map<Variable*, int>(), false);
+    //         }
+    //     }
+    // }
+
+	for(Constraint* constraint : all_constraints)
+	{
+		int counter [sudokuGrid.get_n()] = {0};
+		for(int i = 0; i < sudokuGrid.get_n(); ++i)
+		{
+			for(int value : constraint -> vars[i]->getValues())
+			{
+				counter[value - 1] += 1;
+			}
+
+		}
+
+		for(int i = 0; i < sudokuGrid.get_n(); ++i)
+		{
+			if (counter[i] == 1)
+			{
+				for(Variable* var : constraint -> vars)
+				{
+					if (!(var ->isAssigned()) && var -> getDomain().contains(i + 1))
+					{
+						trail->push(var);
+						var->assignValue(i + 1);
+						// for (Constraint* c : network.getModifiedConstraints())
+						// {	
+						// 	if (!(c->isConsistent()))
+						// 		return make_pair(map<Variable*, int>(), false);
+						// }
+					}
+
 				}
+
 			}
 		}
+
 	}
+
 	return make_pair(map<Variable*, int>(), assignmentsCheck());
 }
 
@@ -207,6 +250,7 @@ Variable* BTSolver::getMRV ( void )
 			
 		}
 	}
+	
     return var;
 }
 
@@ -244,23 +288,21 @@ vector<Variable*> BTSolver::MRVwithTieBreaker ( void )
 	vector<Variable*> final_list;
 
 	int currentBest = -1;
-	for(Variable* variable : list){
-		int numUnassignedNeighbors = 0;
-		for(Variable * neighbor : network.getNeighborsOfVariable(variable)){
-			if(!(neighbor->isAssigned())){
+	for (Variable* variable : list) {
+    	int numUnassignedNeighbors = 0;
+		for (Variable* neighbor : network.getNeighborsOfVariable(variable)) {
+			if (!(neighbor->isAssigned())) {
 				numUnassignedNeighbors++;
 			}
 		}
 
-		if(numUnassignedNeighbors > currentBest){
+		if (numUnassignedNeighbors > currentBest) {
 			final_list.clear();
 			currentBest = numUnassignedNeighbors;
 			final_list.push_back(variable);
-		}
-		else if(numUnassignedNeighbors == currentBest){
-			currentBest = numUnassignedNeighbors;
+		} else if (numUnassignedNeighbors == currentBest) {
 			final_list.push_back(variable);
-		}
+    	}
 	}
 
 	if (final_list.empty())
@@ -269,10 +311,10 @@ vector<Variable*> BTSolver::MRVwithTieBreaker ( void )
 		final_list.push_back(tmp);
 	}
 
+
 	//At this point, list contains all variables with MRV. These now need to be tiebroken with LCV
 
     return final_list;
-
 }
 
 /**
@@ -334,8 +376,8 @@ vector<int> BTSolver::getValuesLCVOrder ( Variable* v )
 		}
 		lcvs.push_back(LCVStruct(value, numConflicts));
 	}
-	sort(lcvs.begin(), lcvs.end());
 
+	sort(lcvs.begin(), lcvs.end());
 
 
 	vector<int> sortedVector;

@@ -120,8 +120,11 @@ int main ( int argc, char *argv[] )
 			solver.solve(600.0);
 
 			if ( solver.haveSolution() )
+			{
+				cout << "FOUND SOLUTION" << endl;
 				numSolutions++;
 
+			}
 			cout << "Trail Pushes: " << temptrail.getPushCount() << endl;
 			cout << "Backtracks: "  << temptrail.getUndoCount() << endl;
 
